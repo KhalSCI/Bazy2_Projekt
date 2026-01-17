@@ -125,3 +125,13 @@ Aplikacja musi umożliwiać symulację stanu portfela w przeszłości.
 ---
 
 Celem jest stworzenie kompletnej, spójnej aplikacji giełdowej, w której Streamlit pełni rolę warstwy prezentacji, a cała logika biznesowa, integralność danych oraz przetwarzanie transakcji są egzekwowane przez OracleDB i pakiet PL/SQL `pkg_gielda`.
+
+Hard requirement – commity
+
+Po zakończeniu każdej istotnej części pracy wymagany jest osobny commit w systemie kontroli wersji (Git).
+
+Każdy commit musi:
+
+obejmować wyłącznie zmiany związane z jedną funkcjonalnością lub etapem,
+
+posiadać krótki, jednoznaczny commit message opisujący zakres zmian.
