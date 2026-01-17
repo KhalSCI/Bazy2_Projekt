@@ -90,50 +90,46 @@ def main():
     # Order form
     st.subheader("Nowe zlecenie kupna")
 
-    with st.form("buy_order_form"):
-        # Instrument selection
-        selected_label = st.selectbox(
-            "Wybierz instrument",
-            options=list(instrument_options.keys()),
-            index=preselected_index
+    # Instrument selection (outside form for immediate feedback)
+    selected_label = st.selectbox(
+        "Wybierz instrument",
+        options=list(instrument_options.keys()),
+        index=preselected_index
+    )
+
+    selected_instrument = instrument_options[selected_label]
+    instrument_id = selected_instrument.get('instrument_id')
+    current_price = selected_instrument.get('cena_zamkniecia')
+
+    # Order type selection (outside form for immediate feedback)
+    order_type = st.selectbox(
+        "Typ zlecenia",
+        options=list(ORDER_TYPES.keys()),
+        format_func=lambda x: ORDER_TYPES[x]
+    )
+
+    # Limit price for LIMIT orders (outside form for immediate feedback)
+    limit_price = None
+    if order_type == 'LIMIT':
+        default_limit = float(current_price) if current_price else 100.0
+        limit_price = st.number_input(
+            "Cena limitu",
+            min_value=0.01,
+            value=default_limit,
+            step=0.01,
+            format="%.2f",
+            help="Zlecenie zostanie wykonane gdy cena spadnie do lub poniżej tej wartości"
         )
 
-        selected_instrument = instrument_options[selected_label]
-        instrument_id = selected_instrument.get('instrument_id')
-        current_price = selected_instrument.get('cena_zamkniecia')
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            # Order type
-            order_type = st.selectbox(
-                "Typ zlecenia",
-                options=list(ORDER_TYPES.keys()),
-                format_func=lambda x: ORDER_TYPES[x]
-            )
-
-        with col2:
-            # Quantity
-            quantity = st.number_input(
-                "Ilość akcji",
-                min_value=0.0001,
-                value=1.0,
-                step=1.0,
-                format="%.4f"
-            )
-
-        # Limit price for LIMIT orders
-        limit_price = None
-        if order_type == 'LIMIT':
-            default_limit = float(current_price) if current_price else 100.0
-            limit_price = st.number_input(
-                "Cena limitu",
-                min_value=0.01,
-                value=default_limit,
-                step=0.01,
-                format="%.2f",
-                help="Zlecenie zostanie wykonane gdy cena spadnie do lub poniżej tej wartości"
-            )
+    with st.form("buy_order_form"):
+        # Quantity
+        quantity = st.number_input(
+            "Ilość akcji",
+            min_value=0.0001,
+            value=1.0,
+            step=1.0,
+            format="%.4f"
+        )
 
         # Calculate costs
         if current_price:
@@ -181,11 +177,11 @@ def main():
                         # Execute order
                         if order_type == 'MARKET':
                             success, message = OrderService.create_and_execute_buy(
-                                portfolio_id, instrument_id, quantity, execution_price
+                                portfolio_id, instrument_id, quantity, execution_price, simulation_date
                             )
                         else:
                             success, message, order_id = OrderService.create_limit_buy(
-                                portfolio_id, instrument_id, quantity, limit_price
+                                portfolio_id, instrument_id, quantity, limit_price, order_date=simulation_date
                             )
 
                         if success:

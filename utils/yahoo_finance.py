@@ -201,19 +201,14 @@ def get_sector_definitions() -> dict:
 
 
 def get_2025_date_range() -> tuple[str, str]:
-    """Get date range for 2025 data (or current year if 2025 hasn't started)."""
+    """Get date range from 2025 until today."""
     today = date.today()
 
-    # For 2025 data
+    # Start from 2025
     start = "2025-01-01"
 
-    # End date is either today or end of 2025, whichever is earlier
-    if today.year >= 2025:
-        end = min(today, date(2025, 12, 31)).strftime('%Y-%m-%d')
-    else:
-        # If we're before 2025, just use a recent date range for testing
-        end = today.strftime('%Y-%m-%d')
-        start = f"{today.year}-01-01"
+    # End date is today
+    end = today.strftime('%Y-%m-%d')
 
     return start, end
 

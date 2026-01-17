@@ -53,7 +53,7 @@ class OrderService:
     @staticmethod
     def create_order(portfolio_id: int, instrument_id: int, order_type: str,
                     order_side: str, quantity: float, limit_price: float = None,
-                    expiration_date: date = None) -> Tuple[bool, str, Optional[int]]:
+                    expiration_date: date = None, order_date: date = None) -> Tuple[bool, str, Optional[int]]:
         """
         Create a new order.
 
@@ -65,69 +65,92 @@ class OrderService:
             quantity: Number of shares
             limit_price: Price limit for LIMIT orders
             expiration_date: Order expiration date
+            order_date: Order creation date (simulation date)
 
         Returns:
             Tuple of (success, message, order_id)
         """
+        from datetime import datetime
+        order_datetime = datetime.combine(order_date, datetime.min.time()) if order_date else None
         return Procedures.create_order(
             portfolio_id, instrument_id, order_type, order_side,
-            quantity, limit_price, expiration_date
+            quantity, limit_price, expiration_date, order_datetime
         )
 
     @staticmethod
     def create_and_execute_buy(portfolio_id: int, instrument_id: int,
-                               quantity: float, price: float) -> Tuple[bool, str]:
+                               quantity: float, price: float, order_date: date = None) -> Tuple[bool, str]:
         """
         Create and immediately execute a market buy order.
+
+        Args:
+            order_date: Order creation date (simulation date)
 
         Returns:
             Tuple of (success, message)
         """
+        from datetime import datetime
+        order_datetime = datetime.combine(order_date, datetime.min.time()) if order_date else None
         return create_and_execute_market_order(
-            portfolio_id, instrument_id, 'KUPNO', quantity, price
+            portfolio_id, instrument_id, 'KUPNO', quantity, price, order_datetime
         )
 
     @staticmethod
     def create_and_execute_sell(portfolio_id: int, instrument_id: int,
-                                quantity: float, price: float) -> Tuple[bool, str]:
+                                quantity: float, price: float, order_date: date = None) -> Tuple[bool, str]:
         """
         Create and immediately execute a market sell order.
+
+        Args:
+            order_date: Order creation date (simulation date)
 
         Returns:
             Tuple of (success, message)
         """
+        from datetime import datetime
+        order_datetime = datetime.combine(order_date, datetime.min.time()) if order_date else None
         return create_and_execute_market_order(
-            portfolio_id, instrument_id, 'SPRZEDAZ', quantity, price
+            portfolio_id, instrument_id, 'SPRZEDAZ', quantity, price, order_datetime
         )
 
     @staticmethod
     def create_limit_buy(portfolio_id: int, instrument_id: int,
                         quantity: float, limit_price: float,
-                        expiration_date: date = None) -> Tuple[bool, str, Optional[int]]:
+                        expiration_date: date = None, order_date: date = None) -> Tuple[bool, str, Optional[int]]:
         """
         Create a limit buy order.
+
+        Args:
+            order_date: Order creation date (simulation date)
 
         Returns:
             Tuple of (success, message, order_id)
         """
+        from datetime import datetime
+        order_datetime = datetime.combine(order_date, datetime.min.time()) if order_date else None
         return Procedures.create_order(
             portfolio_id, instrument_id, 'LIMIT', 'KUPNO',
-            quantity, limit_price, expiration_date
+            quantity, limit_price, expiration_date, order_datetime
         )
 
     @staticmethod
     def create_limit_sell(portfolio_id: int, instrument_id: int,
                          quantity: float, limit_price: float,
-                         expiration_date: date = None) -> Tuple[bool, str, Optional[int]]:
+                         expiration_date: date = None, order_date: date = None) -> Tuple[bool, str, Optional[int]]:
         """
         Create a limit sell order.
+
+        Args:
+            order_date: Order creation date (simulation date)
 
         Returns:
             Tuple of (success, message, order_id)
         """
+        from datetime import datetime
+        order_datetime = datetime.combine(order_date, datetime.min.time()) if order_date else None
         return Procedures.create_order(
             portfolio_id, instrument_id, 'LIMIT', 'SPRZEDAZ',
-            quantity, limit_price, expiration_date
+            quantity, limit_price, expiration_date, order_datetime
         )
 
     @staticmethod

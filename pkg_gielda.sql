@@ -153,7 +153,7 @@ CREATE TABLE ZLECENIA (
     limit_ceny NUMBER(15,4),
     stop_cena NUMBER(15,4),
     status VARCHAR2(20) DEFAULT 'OCZEKUJACE' CHECK (status IN ('OCZEKUJACE', 'WYKONANE', 'ANULOWANE', 'CZESCIOWE')),
-    data_utworzenia TIMESTAMP DEFAULT SYSTIMESTAMP,
+    data_utworzenia TIMESTAMP NOT NULL,
     data_wygasniecia DATE,
     data_wykonania TIMESTAMP
 );
@@ -246,6 +246,7 @@ CREATE OR REPLACE PACKAGE pkg_gielda AS
     PROCEDURE wykonaj_zlecenie_kupna(
         p_order_id IN NUMBER,
         p_cena_wykonania IN NUMBER,
+        p_data_symulacji IN TIMESTAMP DEFAULT NULL,
         p_wynik OUT VARCHAR2
     );
     
@@ -253,6 +254,7 @@ CREATE OR REPLACE PACKAGE pkg_gielda AS
     PROCEDURE wykonaj_zlecenie_sprzedazy(
         p_order_id IN NUMBER,
         p_cena_wykonania IN NUMBER,
+        p_data_symulacji IN TIMESTAMP DEFAULT NULL,
         p_wynik OUT VARCHAR2
     );
     
@@ -356,6 +358,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
     PROCEDURE wykonaj_zlecenie_kupna(
         p_order_id IN NUMBER,
         p_cena_wykonania IN NUMBER,
+        p_data_symulacji IN TIMESTAMP DEFAULT NULL,
         p_wynik OUT VARCHAR2
     ) IS
         v_portfolio_id NUMBER;
@@ -371,7 +374,10 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
         v_stara_srednia NUMBER;
         v_nowa_ilosc NUMBER;
         v_nowa_srednia NUMBER;
+        v_data_wykonania TIMESTAMP;
     BEGIN
+        -- Użyj podanej daty lub aktualnego czasu
+        v_data_wykonania := NVL(p_data_symulacji, SYSTIMESTAMP);
         -- Pobierz dane zlecenia
         SELECT portfolio_id, instrument_id, ilosc
         INTO v_portfolio_id, v_instrument_id, v_ilosc
@@ -411,7 +417,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
         ) VALUES (
             p_order_id, 'KUPNO',
             v_ilosc, p_cena_wykonania, v_wartosc_transakcji, v_prowizja,
-            SYSTIMESTAMP, v_waluta
+            v_data_wykonania, v_waluta
         );
         
         -- Sprawdź czy istnieje pozycja
@@ -433,7 +439,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
                 wartosc_biezaca = ROUND(v_nowa_ilosc * p_cena_wykonania, 2),
                 zysk_strata = ROUND(v_nowa_ilosc * (p_cena_wykonania - v_nowa_srednia), 2),
                 zysk_strata_procent = oblicz_zysk_procent(v_nowa_ilosc * v_nowa_srednia, v_nowa_ilosc * p_cena_wykonania),
-                data_ostatniej_zmiany = SYSTIMESTAMP
+                data_ostatniej_zmiany = v_data_wykonania
             WHERE portfolio_id = v_portfolio_id 
               AND instrument_id = v_instrument_id;
         ELSE
@@ -445,14 +451,14 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
             ) VALUES (
                 v_portfolio_id, v_instrument_id, v_ilosc, p_cena_wykonania,
                 v_wartosc_transakcji, v_wartosc_transakcji, 0, 0,
-                TRUNC(SYSDATE), SYSTIMESTAMP
+                TRUNC(v_data_wykonania), v_data_wykonania
             );
         END IF;
         
         -- Aktualizuj status zlecenia
         UPDATE ZLECENIA
         SET status = 'WYKONANE',
-            data_wykonania = SYSTIMESTAMP
+            data_wykonania = v_data_wykonania
         WHERE order_id = p_order_id;
         
         COMMIT;
@@ -474,6 +480,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
     PROCEDURE wykonaj_zlecenie_sprzedazy(
         p_order_id IN NUMBER,
         p_cena_wykonania IN NUMBER,
+        p_data_symulacji IN TIMESTAMP DEFAULT NULL,
         p_wynik OUT VARCHAR2
     ) IS
         v_portfolio_id NUMBER;
@@ -485,7 +492,10 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
         v_waluta VARCHAR2(3);
         v_posiadana_ilosc NUMBER;
         v_srednia_cena NUMBER;
+        v_data_wykonania TIMESTAMP;
     BEGIN
+        -- Użyj podanej daty lub aktualnego czasu
+        v_data_wykonania := NVL(p_data_symulacji, SYSTIMESTAMP);
         -- Pobierz dane zlecenia
         SELECT portfolio_id, instrument_id, ilosc
         INTO v_portfolio_id, v_instrument_id, v_ilosc
@@ -536,7 +546,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
         ) VALUES (
             p_order_id, 'SPRZEDAZ',
             v_ilosc, p_cena_wykonania, v_wartosc_transakcji, v_prowizja,
-            SYSTIMESTAMP, v_waluta
+            v_data_wykonania, v_waluta
         );
         
         -- Aktualizuj pozycję
@@ -552,7 +562,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
                 wartosc_zakupu = ROUND((ilosc_akcji - v_ilosc) * srednia_cena_zakupu, 2),
                 wartosc_biezaca = ROUND((ilosc_akcji - v_ilosc) * p_cena_wykonania, 2),
                 zysk_strata = ROUND((ilosc_akcji - v_ilosc) * (p_cena_wykonania - srednia_cena_zakupu), 2),
-                data_ostatniej_zmiany = SYSTIMESTAMP
+                data_ostatniej_zmiany = v_data_wykonania
             WHERE portfolio_id = v_portfolio_id 
               AND instrument_id = v_instrument_id;
         END IF;
@@ -560,7 +570,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda AS
         -- Aktualizuj status zlecenia
         UPDATE ZLECENIA
         SET status = 'WYKONANE',
-            data_wykonania = SYSTIMESTAMP
+            data_wykonania = v_data_wykonania
         WHERE order_id = p_order_id;
         
         COMMIT;

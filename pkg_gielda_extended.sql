@@ -55,6 +55,7 @@ CREATE OR REPLACE PACKAGE pkg_gielda_ext AS
         p_ilosc IN NUMBER,
         p_limit_ceny IN NUMBER DEFAULT NULL,
         p_data_wygasniecia IN DATE DEFAULT NULL,
+        p_data_utworzenia IN TIMESTAMP DEFAULT NULL,
         p_order_id OUT NUMBER,
         p_wynik OUT VARCHAR2
     );
@@ -275,12 +276,16 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda_ext AS
         p_ilosc IN NUMBER,
         p_limit_ceny IN NUMBER DEFAULT NULL,
         p_data_wygasniecia IN DATE DEFAULT NULL,
+        p_data_utworzenia IN TIMESTAMP DEFAULT NULL,
         p_order_id OUT NUMBER,
         p_wynik OUT VARCHAR2
     ) IS
         v_portfolio_exists NUMBER;
         v_instrument_exists NUMBER;
+        v_data_utworzenia TIMESTAMP;
     BEGIN
+        -- Użyj podanej daty lub aktualnego czasu
+        v_data_utworzenia := NVL(p_data_utworzenia, SYSTIMESTAMP);
         -- Walidacja typu zlecenia
         IF p_typ_zlecenia NOT IN ('MARKET', 'LIMIT', 'STOP') THEN
             p_order_id := NULL;
@@ -335,10 +340,10 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda_ext AS
         -- Utwórz zlecenie
         INSERT INTO ZLECENIA (
             portfolio_id, instrument_id, typ_zlecenia, strona_zlecenia,
-            ilosc, limit_ceny, data_wygasniecia
+            ilosc, limit_ceny, data_wygasniecia, data_utworzenia
         ) VALUES (
             p_portfolio_id, p_instrument_id, p_typ_zlecenia, p_strona_zlecenia,
-            p_ilosc, p_limit_ceny, p_data_wygasniecia
+            p_ilosc, p_limit_ceny, p_data_wygasniecia, v_data_utworzenia
         )
         RETURNING order_id INTO p_order_id;
 
@@ -418,13 +423,13 @@ CREATE OR REPLACE PACKAGE BODY pkg_gielda_ext AS
                 -- Sprawdź warunki wykonania
                 IF zlecenie.strona_zlecenia = 'KUPNO' AND v_cena <= zlecenie.limit_ceny THEN
                     -- Wykonaj zlecenie kupna
-                    pkg_gielda.wykonaj_zlecenie_kupna(zlecenie.order_id, v_cena, v_wynik_zlecenia);
+                    pkg_gielda.wykonaj_zlecenie_kupna(zlecenie.order_id, v_cena, CAST(p_data_symulacji AS TIMESTAMP), v_wynik_zlecenia);
                     IF v_wynik_zlecenia LIKE 'OK%' THEN
                         v_wykonane := v_wykonane + 1;
                     END IF;
                 ELSIF zlecenie.strona_zlecenia = 'SPRZEDAZ' AND v_cena >= zlecenie.limit_ceny THEN
                     -- Wykonaj zlecenie sprzedaży
-                    pkg_gielda.wykonaj_zlecenie_sprzedazy(zlecenie.order_id, v_cena, v_wynik_zlecenia);
+                    pkg_gielda.wykonaj_zlecenie_sprzedazy(zlecenie.order_id, v_cena, CAST(p_data_symulacji AS TIMESTAMP), v_wynik_zlecenia);
                     IF v_wynik_zlecenia LIKE 'OK%' THEN
                         v_wykonane := v_wykonane + 1;
                     END IF;

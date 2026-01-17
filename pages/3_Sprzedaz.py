@@ -208,11 +208,11 @@ def main():
                         # Execute order
                         if order_type == 'MARKET':
                             success, message = OrderService.create_and_execute_sell(
-                                portfolio_id, instrument_id, quantity, execution_price
+                                portfolio_id, instrument_id, quantity, execution_price, simulation_date
                             )
                         else:
                             success, message, order_id = OrderService.create_limit_sell(
-                                portfolio_id, instrument_id, quantity, limit_price
+                                portfolio_id, instrument_id, quantity, limit_price, order_date=simulation_date
                             )
 
                         if success:

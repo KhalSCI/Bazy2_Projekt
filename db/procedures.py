@@ -235,7 +235,7 @@ class Procedures:
     @staticmethod
     def create_order(portfolio_id: int, instrument_id: int, order_type: str,
                      order_side: str, quantity: float, limit_price: float = None,
-                     expiration_date: date = None) -> Tuple[bool, str, Optional[int]]:
+                     expiration_date: date = None, order_date: datetime = None) -> Tuple[bool, str, Optional[int]]:
         """
         Create a new order.
 
@@ -247,6 +247,7 @@ class Procedures:
             quantity: Number of shares
             limit_price: Price limit for LIMIT orders
             expiration_date: Order expiration date
+            order_date: Order creation date (defaults to now if not provided)
 
         Returns:
             Tuple of (success, message, order_id)
@@ -259,7 +260,7 @@ class Procedures:
 
                 cursor.callproc('pkg_gielda_ext.utworz_zlecenie', [
                     portfolio_id, instrument_id, order_type, order_side,
-                    quantity, limit_price, expiration_date,
+                    quantity, limit_price, expiration_date, order_date,
                     order_id, result
                 ])
 
@@ -270,9 +271,12 @@ class Procedures:
             return False, translate_oracle_error(e), None
 
     @staticmethod
-    def execute_buy_order(order_id: int, execution_price: float) -> Tuple[bool, str]:
+    def execute_buy_order(order_id: int, execution_price: float, execution_date: datetime = None) -> Tuple[bool, str]:
         """
         Execute a pending buy order.
+
+        Args:
+            execution_date: Execution date (simulation date)
 
         Returns:
             Tuple of (success, message)
@@ -283,7 +287,7 @@ class Procedures:
                 result = cursor.var(oracledb.STRING, 500)
 
                 cursor.callproc('pkg_gielda.wykonaj_zlecenie_kupna', [
-                    order_id, execution_price, result
+                    order_id, execution_price, execution_date, result
                 ])
 
                 return parse_result(result.getvalue())
@@ -292,9 +296,12 @@ class Procedures:
             return False, translate_oracle_error(e)
 
     @staticmethod
-    def execute_sell_order(order_id: int, execution_price: float) -> Tuple[bool, str]:
+    def execute_sell_order(order_id: int, execution_price: float, execution_date: datetime = None) -> Tuple[bool, str]:
         """
         Execute a pending sell order.
+
+        Args:
+            execution_date: Execution date (simulation date)
 
         Returns:
             Tuple of (success, message)
@@ -305,7 +312,7 @@ class Procedures:
                 result = cursor.var(oracledb.STRING, 500)
 
                 cursor.callproc('pkg_gielda.wykonaj_zlecenie_sprzedazy', [
-                    order_id, execution_price, result
+                    order_id, execution_price, execution_date, result
                 ])
 
                 return parse_result(result.getvalue())
@@ -439,9 +446,12 @@ class Procedures:
 # Convenience function for creating and immediately executing market orders
 def create_and_execute_market_order(portfolio_id: int, instrument_id: int,
                                     order_side: str, quantity: float,
-                                    price: float) -> Tuple[bool, str]:
+                                    price: float, order_date: datetime = None) -> Tuple[bool, str]:
     """
     Create and immediately execute a market order.
+
+    Args:
+        order_date: Order creation date (simulation date)
 
     Returns:
         Tuple of (success, message)
@@ -452,7 +462,8 @@ def create_and_execute_market_order(portfolio_id: int, instrument_id: int,
         instrument_id=instrument_id,
         order_type='MARKET',
         order_side=order_side,
-        quantity=quantity
+        quantity=quantity,
+        order_date=order_date
     )
 
     if not success or order_id is None:
@@ -460,6 +471,6 @@ def create_and_execute_market_order(portfolio_id: int, instrument_id: int,
 
     # Execute the order
     if order_side == 'KUPNO':
-        return Procedures.execute_buy_order(order_id, price)
+        return Procedures.execute_buy_order(order_id, price, order_date)
     else:
-        return Procedures.execute_sell_order(order_id, price)
+        return Procedures.execute_sell_order(order_id, price, order_date)
