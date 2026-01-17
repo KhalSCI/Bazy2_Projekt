@@ -12,7 +12,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import APP_CONFIG, SUPPORTED_CURRENCIES
+from config import APP_CONFIG
 from services.portfolio_service import UserService, PortfolioService
 from services.market_service import MarketService
 from services.data_loader import DataLoader
@@ -124,11 +124,8 @@ def register_form():
         first_name = st.text_input("Imię (opcjonalnie)")
         last_name = st.text_input("Nazwisko (opcjonalnie)")
 
-        col1, col2 = st.columns(2)
-        with col1:
-            portfolio_name = st.text_input("Nazwa portfela", value="Mój portfel")
-        with col2:
-            portfolio_currency = st.selectbox("Waluta portfela", SUPPORTED_CURRENCIES)
+        portfolio_name = st.text_input("Nazwa portfela", value="Mój portfel")
+        portfolio_currency = 'USD'
 
         initial_balance = st.number_input(
             "Saldo początkowe",
@@ -253,8 +250,20 @@ def sidebar():
                 )
 
                 if simulation_date != st.session_state.simulation_date:
+                    old_date = st.session_state.simulation_date
                     st.session_state.simulation_date = simulation_date
                     st.session_state.is_time_travel = (simulation_date != date.today())
+
+                    # Process limit orders when moving forward in time
+                    if st.session_state.get('portfolio_id') and simulation_date > old_date:
+                        from services.order_service import OrderService
+                        if OrderService.has_pending_limit_orders(st.session_state.portfolio_id):
+                            executed, messages = OrderService.process_limit_orders_for_range(
+                                st.session_state.portfolio_id, old_date, simulation_date
+                            )
+                            if messages:
+                                st.session_state['limit_order_messages'] = messages
+
                     st.rerun()
 
                 if st.session_state.is_time_travel:
@@ -305,6 +314,11 @@ def main():
 
     # Show sidebar for logged in users
     sidebar()
+
+    # Display limit order execution messages
+    if 'limit_order_messages' in st.session_state:
+        for msg in st.session_state.pop('limit_order_messages'):
+            st.success(msg)
 
     # Main content - redirect to portfolio page by default
     st.title("Symulator Giełdy")

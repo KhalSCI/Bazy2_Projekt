@@ -120,6 +120,15 @@ class MarketService:
         return None, None
 
     @staticmethod
+    def get_trading_days_between(start_date: date, end_date: date) -> List[date]:
+        """Get all trading days between two dates (exclusive start, inclusive end)."""
+        results = execute_query(
+            Queries.GET_TRADING_DAYS_BETWEEN,
+            {'start_date': start_date, 'end_date': end_date}
+        )
+        return [row[0] for row in results]
+
+    @staticmethod
     def get_instruments_with_prices(target_date: date = None) -> List[Dict]:
         """
         Get all instruments with their current prices.
@@ -161,63 +170,3 @@ class MarketService:
                 inst['zmiana_procent'] = None
 
         return instruments
-
-
-class ExchangeRateService:
-    """Service for exchange rate operations."""
-
-    @staticmethod
-    def get_exchange_rate(from_currency: str, to_currency: str) -> Optional[float]:
-        """Get latest exchange rate."""
-        if from_currency == to_currency:
-            return 1.0
-
-        results = execute_query_dict(
-            Queries.GET_EXCHANGE_RATE,
-            {
-                'waluta_bazowa': from_currency,
-                'waluta_docelowa': to_currency
-            }
-        )
-
-        if results:
-            return float(results[0].get('kurs_sredni', 1.0))
-        return None
-
-    @staticmethod
-    def get_exchange_rate_for_date(from_currency: str, to_currency: str,
-                                   target_date: date) -> Optional[float]:
-        """Get exchange rate for a specific date."""
-        if from_currency == to_currency:
-            return 1.0
-
-        results = execute_query_dict(
-            Queries.GET_EXCHANGE_RATE_FOR_DATE,
-            {
-                'waluta_bazowa': from_currency,
-                'waluta_docelowa': to_currency,
-                'data_kursu': target_date
-            }
-        )
-
-        if results:
-            return float(results[0].get('kurs_sredni', 1.0))
-        return None
-
-    @staticmethod
-    def convert_amount(amount: float, from_currency: str,
-                      to_currency: str, target_date: date = None) -> Optional[float]:
-        """Convert amount between currencies."""
-        if from_currency == to_currency:
-            return amount
-
-        if target_date:
-            rate = ExchangeRateService.get_exchange_rate_for_date(
-                from_currency, to_currency, target_date
-            )
-        else:
-            rate = ExchangeRateService.get_exchange_rate(from_currency, to_currency)
-
-        if rate:
-            return round(amount * rate, 2)
-        return None

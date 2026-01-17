@@ -76,7 +76,7 @@ CREATE TABLE UZYTKOWNICY (
     imie VARCHAR2(50),
     nazwisko VARCHAR2(50),
     data_rejestracji DATE DEFAULT SYSDATE,
-    waluta_bazowa VARCHAR2(3) DEFAULT 'PLN'
+    waluta_bazowa VARCHAR2(3) DEFAULT 'USD'
 );
 -- Tabela: GIELDY
 -- Przechowuje informacje o giełdach papierów wartościowych

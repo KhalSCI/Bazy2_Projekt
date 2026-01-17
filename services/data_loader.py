@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from db.connection import get_db_connection, execute_query_dict, execute_dml
 from utils.yahoo_finance import (
     get_default_stocks, get_sector_definitions, fetch_multiple_stocks,
-    get_2025_date_range, get_common_exchange_rates
+    get_2025_date_range
 )
 
 
@@ -253,49 +253,6 @@ class DataLoader:
             return False, f"Błąd podczas ładowania danych: {str(e)}"
 
     @staticmethod
-    def load_exchange_rates() -> Tuple[bool, str]:
-        """
-        Load current exchange rates.
-
-        Returns:
-            Tuple of (success, message)
-        """
-        try:
-            rates = get_common_exchange_rates('USD')
-            today = date.today()
-            inserted = 0
-
-            for currency, rate in rates.items():
-                if currency == 'USD':
-                    continue
-
-                # Check if exists
-                existing = execute_query_dict("""
-                    SELECT rate_id FROM KURSY_WALUT
-                    WHERE waluta_bazowa = 'USD'
-                      AND waluta_docelowa = :currency
-                      AND data_kursu = :today
-                """, {'currency': currency, 'today': today})
-
-                if not existing:
-                    execute_dml("""
-                        INSERT INTO KURSY_WALUT (waluta_bazowa, waluta_docelowa,
-                            data_kursu, kurs_sredni, kurs_kupna, kurs_sprzedazy)
-                        VALUES ('USD', :currency, :today, :rate,
-                                :rate * 0.99, :rate * 1.01)
-                    """, {
-                        'currency': currency,
-                        'today': today,
-                        'rate': rate
-                    })
-                    inserted += 1
-
-            return True, f"Załadowano {inserted} kursów walut"
-
-        except Exception as e:
-            return False, f"Błąd podczas ładowania kursów walut: {str(e)}"
-
-    @staticmethod
     def initialize_all(progress_callback=None) -> Tuple[bool, List[str]]:
         """
         Initialize all data (exchange, sectors, instruments, prices).
@@ -344,12 +301,6 @@ class DataLoader:
         messages.append(msg)
         if not success:
             return False, messages
-
-        # Step 5: Load exchange rates
-        if progress_callback:
-            progress_callback(5, "Ładowanie kursów walut...")
-        success, msg = DataLoader.load_exchange_rates()
-        messages.append(msg)
 
         return True, messages
 

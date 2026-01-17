@@ -11,8 +11,6 @@ from .yahoo_finance import (
     get_default_stocks,
     get_sector_definitions,
     get_2025_date_range,
-    get_exchange_rate,
-    get_common_exchange_rates,
 )
 
 from .validators import (
@@ -42,8 +40,6 @@ __all__ = [
     'get_default_stocks',
     'get_sector_definitions',
     'get_2025_date_range',
-    'get_exchange_rate',
-    'get_common_exchange_rates',
     # Validators
     'validate_email',
     'validate_login',

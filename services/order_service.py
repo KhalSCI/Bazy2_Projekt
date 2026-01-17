@@ -221,6 +221,59 @@ class OrderService:
             'przychod_netto': round(przychod_netto, 2)
         }
 
+    @staticmethod
+    def has_pending_limit_orders(portfolio_id: int) -> bool:
+        """Check if portfolio has any pending LIMIT orders."""
+        pending = OrderService.get_pending_orders(portfolio_id)
+        return any(o.get('typ_zlecenia') == 'LIMIT' for o in pending)
+
+    @staticmethod
+    def process_limit_orders_for_range(portfolio_id: int, old_date: date, new_date: date) -> Tuple[int, List[str]]:
+        """
+        Process limit orders for all trading days between old_date and new_date.
+
+        Only processes forward in time (can't un-execute orders).
+        Stops early if no more pending LIMIT orders exist.
+
+        Args:
+            portfolio_id: Portfolio ID
+            old_date: Previous simulation date
+            new_date: New simulation date
+
+        Returns:
+            Tuple of (executed_count, messages)
+        """
+        from services.market_service import MarketService
+
+        messages = []
+        executed_count = 0
+
+        # Only process forward in time
+        if new_date <= old_date:
+            return 0, []
+
+        # Get trading days between dates
+        trading_days = MarketService.get_trading_days_between(old_date, new_date)
+
+        if not trading_days:
+            return 0, []
+
+        # Process each trading day
+        for day in trading_days:
+            # Check if there are still pending LIMIT orders
+            if not OrderService.has_pending_limit_orders(portfolio_id):
+                break
+
+            # Process limit orders for this day
+            success, message = OrderService.process_limit_orders(portfolio_id, day)
+
+            if success and message and "wykonano" in message.lower():
+                # Extract execution info from message
+                messages.append(f"{day}: {message}")
+                executed_count += 1
+
+        return executed_count, messages
+
 
 class TransactionService:
     """Service for transaction history."""

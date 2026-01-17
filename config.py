@@ -28,7 +28,7 @@ APP_CONFIG = {
 }
 
 # Supported currencies
-SUPPORTED_CURRENCIES = ['USD', 'PLN', 'EUR', 'GBP', 'CHF', 'JPY']
+SUPPORTED_CURRENCIES = ['USD']
 
 # Order types
 ORDER_TYPES = {

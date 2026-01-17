@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.portfolio_service import PortfolioService, UserService
 from services.data_loader import DataLoader
 from db.connection import test_connection
-from config import APP_CONFIG, SUPPORTED_CURRENCIES
+from config import APP_CONFIG
 from utils.validators import validate_positive_number
 
 
@@ -138,13 +138,8 @@ def main():
         st.subheader("Utwórz nowy portfel")
 
         with st.form("new_portfolio_form"):
-            col1, col2 = st.columns(2)
-
-            with col1:
-                portfolio_name = st.text_input("Nazwa portfela")
-
-            with col2:
-                portfolio_currency = st.selectbox("Waluta", SUPPORTED_CURRENCIES)
+            portfolio_name = st.text_input("Nazwa portfela")
+            portfolio_currency = 'USD'
 
             initial_balance = st.number_input(
                 "Saldo początkowe",

@@ -310,33 +310,6 @@ class Queries:
     """
 
     # ===================
-    # EXCHANGE RATE QUERIES
-    # ===================
-
-    GET_EXCHANGE_RATE = """
-        SELECT kurs_sredni, data_kursu, kurs_kupna, kurs_sprzedazy
-        FROM KURSY_WALUT
-        WHERE waluta_bazowa = :waluta_bazowa
-          AND waluta_docelowa = :waluta_docelowa
-          AND data_kursu = (
-              SELECT MAX(data_kursu)
-              FROM KURSY_WALUT
-              WHERE waluta_bazowa = :waluta_bazowa
-                AND waluta_docelowa = :waluta_docelowa
-          )
-    """
-
-    GET_EXCHANGE_RATE_FOR_DATE = """
-        SELECT kurs_sredni, data_kursu, kurs_kupna, kurs_sprzedazy
-        FROM KURSY_WALUT
-        WHERE waluta_bazowa = :waluta_bazowa
-          AND waluta_docelowa = :waluta_docelowa
-          AND data_kursu <= :data_kursu
-        ORDER BY data_kursu DESC
-        FETCH FIRST 1 ROW ONLY
-    """
-
-    # ===================
     # STATISTICS QUERIES
     # ===================
 
@@ -361,4 +334,16 @@ class Queries:
         LEFT JOIN INSTRUMENTY i ON s.sector_id = i.sector_id AND i.status = 'AKTYWNY'
         GROUP BY s.nazwa_sektora
         ORDER BY liczba_instrumentow DESC
+    """
+
+    # ===================
+    # TRADING DAYS QUERIES
+    # ===================
+
+    GET_TRADING_DAYS_BETWEEN = """
+        SELECT DISTINCT data_notowan
+        FROM DANE_DZIENNE
+        WHERE data_notowan > :start_date
+          AND data_notowan <= :end_date
+        ORDER BY data_notowan ASC
     """
