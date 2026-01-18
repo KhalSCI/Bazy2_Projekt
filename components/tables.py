@@ -55,13 +55,12 @@ class Tables:
                     )
 
                 with col4:
-                    color = "normal" if zysk_strata >= 0 else "inverse"
                     sign = "+" if zysk_strata > 0 else ""
                     st.metric(
                         label="Zysk/Strata",
                         value=f"{sign}{zysk_strata:,.2f} {currency}",
                         delta=f"{sign}{zysk_procent:.2f}%",
-                        delta_color=color
+                        delta_color="normal"
                     )
 
                 with col5:

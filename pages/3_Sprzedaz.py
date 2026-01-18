@@ -180,12 +180,11 @@ def main():
                 st.metric("Wartość zakupu", f"{purchase_value:,.2f} {currency}")
             with col2:
                 sign = "+" if gain_loss > 0 else ""
-                color = "normal" if gain_loss >= 0 else "inverse"
                 st.metric(
                     "Zysk/Strata",
                     f"{sign}{gain_loss:,.2f} {currency}",
                     delta=f"{sign}{gain_loss_pct:.2f}%",
-                    delta_color=color
+                    delta_color="normal"
                 )
 
         submit = st.form_submit_button("Złóż zlecenie sprzedaży", use_container_width=True)

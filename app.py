@@ -372,8 +372,7 @@ def main():
                 sign = "+" if zysk_strata > 0 else ""
                 st.metric(
                     label="Zysk/Strata",
-                    value=f"{sign}{zysk_strata:,.2f} {currency}",
-                    delta_color="normal" if zysk_strata >= 0 else "inverse"
+                    value=f"{sign}{zysk_strata:,.2f} {currency}"
                 )
 
     st.divider()
